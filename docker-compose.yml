@@ -1,0 +1,41 @@
+version: '3.7'
+
+services:
+  api:
+    container_name: 'category-crud'
+    build:
+      context: .
+      target: development
+      args:
+        - NODE_ENV=development
+    volumes:
+      - .:/usr/src/app
+    ports:
+      - '3000:3000'
+      - '9229:9229'
+    command: npm run start:debug
+    env_file:
+      - .env
+    depends_on:
+      - mongo
+    networks:
+      - category-api-network
+  mongo:
+    image: mongo:latest
+    container_name: 'category-crud-mongo'
+    volumes:
+      - mongodb_data_container:/data/db
+    env_file:
+      - .env
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+    ports:
+      - ${MONGO_PORT}:${MONGO_PORT}
+    networks:
+      - category-api-network
+
+networks:
+  category-api-network:
+volumes:
+  mongodb_data_container:

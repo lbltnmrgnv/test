@@ -1,0 +1,58 @@
+[
+  {
+    "id": "1a34b470-9b7c-4ac7-8831-d114f9cdc18a",
+    "name": "Scientific literature",
+    "slug": "v",
+    "description": "Popular science books",
+    "active": true,
+    "createdDate": "2025-09-12T10:09:06.887Z"
+  },
+  {
+    "id": "e8f9ab87-30bd-40e3-a9c9-b93905c73789",
+    "name": "Scientific literature",
+    "slug": "books",
+    "description": "Popular science books",
+    "active": true,
+    "createdDate": "2025-09-12T10:09:25.479Z"
+  },
+  {
+    "id": "c3a3654b-75ca-4bf2-a4c5-7ddae40cab94",
+    "name": "Scientific literature",
+    "slug": "bbovoks",
+    "description": "",
+    "active": true,
+    "createdDate": "2025-09-12T10:09:39.622Z"
+  },
+  {
+    "id": "2a7d2996-872d-4ac0-af6c-3101b893fb36",
+    "name": "Scientific literature",
+    "slug": "bbovvoks",
+    "description": "Popular science books",
+    "active": true,
+    "createdDate": "2025-09-12T10:09:53.111Z"
+  },
+  {
+    "id": "45ad241a-a973-4f39-a7b5-c755a907affc",
+    "name": "Scientific literature",
+    "slug": "bookdds",
+    "description": "Popular science books",
+    "active": true,
+    "createdDate": "2025-09-23T03:42:29.707Z"
+  },
+  {
+    "id": "74aa68a3-0ef3-43c9-ae20-611ede27bed7",
+    "name": "Scientific literature",
+    "slug": "bookdddds",
+    "description": "Popular science books",
+    "active": false,
+    "createdDate": "2025-09-23T03:42:35.255Z"
+  },
+  {
+    "id": "ad706364-198d-47a8-bbd6-ccce6369dda1",
+    "name": "Scientific literature",
+    "slug": "bookdddddds",
+    "description": "Popular science books",
+    "active": false,
+    "createdDate": "2025-09-23T03:44:15.634Z"
+  }
+]
