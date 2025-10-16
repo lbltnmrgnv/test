@@ -54,5 +54,13 @@
     "description": "Popular science books",
     "active": false,
     "createdDate": "2025-09-23T03:44:15.634Z"
+  },
+  {
+    "id": "a082ce83-1b95-406e-9693-e6c9b40c28f0",
+    "name": "Scientific literature",
+    "slug": "ooks",
+    "description": "Popular science books",
+    "active": true,
+    "createdDate": "2025-09-23T03:54:29.953Z"
   }
 ]
