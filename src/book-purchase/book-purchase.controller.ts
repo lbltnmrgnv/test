@@ -24,7 +24,7 @@ import { CreateBookPurchaseDto } from './dto/create-book-purchase.dto';
 import { PurchaseOperation, PurchaseStatus } from './models/purchase-operation.model';
 import { ReplayProviderEventDto } from './dto/replay-provider-event.dto';
 
-@ApiTags('book-purchase')
+@ApiTags('book-purchase', 'candidate-task')
 @Controller('book-purchase')
 export class BookPurchaseController {
   constructor(private readonly bookPurchaseService: BookPurchaseService) {}

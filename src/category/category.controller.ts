@@ -17,9 +17,10 @@ import { Category } from './category.schema'; // Для Swagger
 import { FindOneParams } from './utils/find-one-params';
 import { IdParam } from './utils/id-param';
 import { QueryParams } from './utils/query-params';
-import { ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { JsonCategory } from './category-json.model'; // JSON-модель
 
+@ApiTags('category')
 @Controller('category')
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
@@ -36,6 +37,10 @@ export class CategoryController {
   }
 
   @Get(':identifier')
+  @ApiOperation({
+    summary: 'Get category by id or slug',
+    description: 'Legacy CRUD endpoint. Secondary priority for interview.',
+  })
   @ApiResponse({ status: HttpStatus.OK, description: 'Success response.', type: Category })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Bad Request.' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Not Found.' })
@@ -45,6 +50,10 @@ export class CategoryController {
   }
 
   @Get()
+  @ApiOperation({
+    summary: 'List categories',
+    description: 'Legacy CRUD endpoint with filters and pagination.',
+  })
   @ApiResponse({ status: HttpStatus.OK, description: 'Success response.', type: Category })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Bad Request.' })
   async getAll(@Query() params: QueryParams): Promise<Category[]> {
@@ -54,6 +63,10 @@ export class CategoryController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Create category',
+    description: 'Legacy CRUD endpoint. Not the main interview flow.',
+  })
   @ApiResponse({ status: HttpStatus.CREATED, description: 'Success response.', type: Category })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Bad Request.' })
   async create(@Body() data: CreateCategoryDto): Promise<Category> {
@@ -62,6 +75,10 @@ export class CategoryController {
   }
 
   @Patch(':id')
+  @ApiOperation({
+    summary: 'Patch category',
+    description: 'Legacy CRUD endpoint.',
+  })
   @ApiResponse({ status: HttpStatus.OK, description: 'Success response.', type: Category })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Bad Request.' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Not Found.' })
@@ -75,6 +92,10 @@ export class CategoryController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Delete category',
+    description: 'Legacy CRUD endpoint.',
+  })
   @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Success response.' })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Bad Request.' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Not Found.' })
