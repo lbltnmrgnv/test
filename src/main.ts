@@ -22,10 +22,28 @@ async function bootstrap() {
         .setTitle('Book Store Test API')
         .setDescription(
           [
-            'Test project with two main API sections:',
+            'This API is used as a test task for QA candidates.',
             '',
-            '- `books`: catalog for choosing items to buy.',
-            '- `book-purchase`: async mocked payment flow with idempotency and status polling.',
+            'Where to start:',
+            '1. Open `books` section and get a valid `bookId` from `GET /books`.',
+            '2. Create purchase operation via `POST /book-purchase` with header `Idempotency-Key`.',
+            '3. Poll final status using `GET /book-purchase/operations/{operationId}`.',
+            '',
+            'Main sections:',
+            '- `books`: catalog data for purchase scenarios.',
+            '- `book-purchase`: async mocked payment flow with idempotency, retries and status polling.',
+            '',
+            'What to verify:',
+            '- Happy path: operation transitions from `PENDING` to `PAID`.',
+            '- Negative path: invalid input, missing headers, not enough stock.',
+            '- Idempotency: same key + same payload returns same operation; same key + different payload returns conflict.',
+            '- Rate limiting: repeated create requests may return `429`.',
+            '- Async behavior: polling timing, delayed processing and flaky payment outcomes.',
+            '',
+            'Payment token hints for mock behavior:',
+            '- token contains `fail` => final status `FAILED`.',
+            '- token contains `flaky` => first attempt may fail, then retry.',
+            '- token contains `slow` => processing takes longer than default.',
           ].join('\n'),
         )
         .setVersion('1.0')
