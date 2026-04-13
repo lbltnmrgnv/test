@@ -10,7 +10,15 @@ import {
   Query,
   BadRequestException,
 } from '@nestjs/common';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiHeader,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { BookPurchaseService } from './book-purchase.service';
 import { CreateBookPurchaseDto } from './dto/create-book-purchase.dto';
 import { PurchaseOperation, PurchaseStatus } from './models/purchase-operation.model';
@@ -23,7 +31,58 @@ export class BookPurchaseController {
 
   @Post()
   @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({
+    summary: 'Create a book purchase operation',
+    description:
+      'Creates async payment operation. Requires Idempotency-Key header. Reusing the same key with same payload returns the same operation; with different payload returns 409.',
+  })
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    required: true,
+    description: 'Unique request key for deduplication of purchase creation',
+    example: 'purchase-user-1-2026-04-13-001',
+  })
+  @ApiBody({
+    type: CreateBookPurchaseDto,
+    examples: {
+      paid: {
+        summary: 'Standard successful flow',
+        value: {
+          bookId: 'book-atomic-habits',
+          customerId: 'user-1',
+          quantity: 1,
+          paymentToken: 'tok_visa_test',
+        },
+      },
+      failed: {
+        summary: 'Declined payment',
+        value: {
+          bookId: 'book-atomic-habits',
+          customerId: 'user-2',
+          quantity: 1,
+          paymentToken: 'tok_fail_card',
+        },
+      },
+      flaky: {
+        summary: 'Flaky first attempt then retry',
+        value: {
+          bookId: 'book-ddd',
+          customerId: 'user-3',
+          quantity: 1,
+          paymentToken: 'tok_flaky_gateway',
+        },
+      },
+    },
+  })
   @ApiResponse({ status: HttpStatus.ACCEPTED, type: PurchaseOperation })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'Idempotency-Key was reused with a different payload',
+  })
+  @ApiResponse({
+    status: HttpStatus.TOO_MANY_REQUESTS,
+    description: 'Rate limit exceeded for customerId (3 creates per 60 seconds)',
+  })
   async create(
     @Headers('idempotency-key') idempotencyKey: string,
     @Body() dto: CreateBookPurchaseDto,
@@ -36,6 +95,16 @@ export class BookPurchaseController {
   }
 
   @Get('operations')
+  @ApiOperation({
+    summary: 'List purchase operations',
+    description: 'Returns all operations or filters them by operation status.',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: PurchaseStatus,
+    description: 'Optional filter by status',
+  })
   @ApiResponse({ status: HttpStatus.OK, type: PurchaseOperation, isArray: true })
   async getAll(
     @Query('status') status?: PurchaseStatus,
@@ -50,6 +119,16 @@ export class BookPurchaseController {
   }
 
   @Get('operations/:operationId')
+  @ApiOperation({
+    summary: 'Get operation by id',
+    description: 'Use this endpoint to poll operation status until it becomes PAID or FAILED.',
+  })
+  @ApiParam({
+    name: 'operationId',
+    required: true,
+    description: 'Operation identifier from POST /book-purchase response',
+    example: '2ce2535d-d13b-4704-a708-e28845e57034',
+  })
   @ApiResponse({ status: HttpStatus.OK, type: PurchaseOperation })
   async findOne(
     @Param('operationId') operationId: string,
@@ -58,6 +137,30 @@ export class BookPurchaseController {
   }
 
   @Post('operations/:operationId/replay')
+  @ApiOperation({
+    summary: 'Replay payment provider event (technical)',
+    description:
+      'Testing-only endpoint to simulate duplicate/out-of-order provider callbacks and status transitions.',
+  })
+  @ApiParam({
+    name: 'operationId',
+    required: true,
+    description: 'Target operation id',
+    example: '2ce2535d-d13b-4704-a708-e28845e57034',
+  })
+  @ApiBody({
+    type: ReplayProviderEventDto,
+    examples: {
+      paid: {
+        summary: 'Replay PAID event',
+        value: { status: 'PAID' },
+      },
+      failed: {
+        summary: 'Replay FAILED event',
+        value: { status: 'FAILED' },
+      },
+    },
+  })
   @ApiResponse({ status: HttpStatus.OK, type: PurchaseOperation })
   async replayEvent(
     @Param('operationId') operationId: string,

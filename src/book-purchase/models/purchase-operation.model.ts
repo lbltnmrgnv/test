@@ -43,5 +43,9 @@ export class PurchaseOperation {
   @ApiProperty({ example: '2026-04-13T10:17:01.000Z', required: false })
   lastEventAt?: string;
 
+  @ApiProperty({
+    example: 'purchase-user-1-2026-04-13-001',
+    description: 'Deduplication key from request header Idempotency-Key',
+  })
   idempotencyKey: string;
 }
