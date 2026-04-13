@@ -72,6 +72,36 @@ describe('App (e2e)', () => {
     expect(Array.isArray(response.json())).toBe(true);
   });
 
+  it('/books (POST) and /books/:id (PATCH)', async () => {
+    const createResponse = await app.inject({
+      method: 'POST',
+      url: '/books',
+      payload: {
+        id: 'book-test-driven-development',
+        title: 'Test Driven Development',
+        author: 'Kent Beck',
+        categorySlug: 'books',
+        priceCents: 1990,
+        stock: 4,
+        active: true,
+      },
+    });
+
+    expect(createResponse.statusCode).toBe(201);
+    expect(createResponse.json().id).toBe('book-test-driven-development');
+
+    const patchResponse = await app.inject({
+      method: 'PATCH',
+      url: '/books/book-test-driven-development',
+      payload: {
+        stock: 9,
+      },
+    });
+
+    expect(patchResponse.statusCode).toBe(200);
+    expect(patchResponse.json().stock).toBe(9);
+  });
+
   it('/book-purchase (POST) should validate idempotency key', async () => {
     const response = await app.inject({
       method: 'POST',
