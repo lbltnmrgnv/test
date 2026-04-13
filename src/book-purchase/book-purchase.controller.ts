@@ -35,7 +35,16 @@ export class BookPurchaseController {
   @ApiOperation({
     summary: 'Create a book purchase operation',
     description:
-      'Creates async payment operation. Requires Idempotency-Key header. Reusing the same key with same payload returns the same operation; with different payload returns 409.',
+      [
+        'Creates async payment operation.',
+        'Requires Idempotency-Key header.',
+        'Reusing the same key with same payload returns the same operation; with different payload returns 409.',
+        '',
+        'Payment token hints for mock behavior:',
+        '- token contains `fail` => final status `FAILED`.',
+        '- token contains `flaky` => first attempt may fail, then retry.',
+        '- token contains `slow` => processing takes longer than default.',
+      ].join('\n'),
   })
   @ApiHeader({
     name: 'Idempotency-Key',
