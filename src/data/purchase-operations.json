@@ -1,0 +1,35 @@
+[
+  {
+    "operationId": "67fa2b1f-ea4c-48fa-ae06-34174af745fe",
+    "status": "PENDING",
+    "bookId": "book-atomic-habits",
+    "quantity": 1,
+    "customerId": "senior-candidate",
+    "amountCents": 1490,
+    "idempotencyKey": "limit-key-1",
+    "paymentAttempts": 0,
+    "createdAt": "2026-04-13T05:52:15.656Z"
+  },
+  {
+    "operationId": "e4fd0f82-aceb-4588-b89c-decdb57da482",
+    "status": "PENDING",
+    "bookId": "book-atomic-habits",
+    "quantity": 1,
+    "customerId": "senior-candidate",
+    "amountCents": 1490,
+    "idempotencyKey": "limit-key-2",
+    "paymentAttempts": 0,
+    "createdAt": "2026-04-13T05:52:15.657Z"
+  },
+  {
+    "operationId": "9f705c64-1c36-415b-bbe2-3a455ba5b195",
+    "status": "PENDING",
+    "bookId": "book-atomic-habits",
+    "quantity": 1,
+    "customerId": "senior-candidate",
+    "amountCents": 1490,
+    "idempotencyKey": "limit-key-3",
+    "paymentAttempts": 0,
+    "createdAt": "2026-04-13T05:52:15.657Z"
+  }
+]

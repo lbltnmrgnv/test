@@ -1,0 +1,29 @@
+[
+  {
+    "id": "book-atomic-habits",
+    "title": "Atomic Habits",
+    "author": "James Clear",
+    "categorySlug": "books",
+    "priceCents": 1490,
+    "stock": 8,
+    "active": true
+  },
+  {
+    "id": "book-ddd",
+    "title": "Domain-Driven Design",
+    "author": "Eric Evans",
+    "categorySlug": "books",
+    "priceCents": 3590,
+    "stock": 3,
+    "active": true
+  },
+  {
+    "id": "book-clean-code",
+    "title": "Clean Code",
+    "author": "Robert C. Martin",
+    "categorySlug": "books",
+    "priceCents": 2190,
+    "stock": 0,
+    "active": true
+  }
+]

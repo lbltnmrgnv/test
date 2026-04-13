@@ -19,8 +19,10 @@ async function bootstrap() {
     SwaggerModule.createDocument(
       app,
       new DocumentBuilder()
-        .setTitle('Categories CRUD')
-        .setDescription('Categories CRUD API')
+        .setTitle('Book Store Test API')
+        .setDescription(
+          'Category API + book purchase flow with async mocked payments and idempotency',
+        )
         .setVersion('1.0')
         .build(),
     ),
