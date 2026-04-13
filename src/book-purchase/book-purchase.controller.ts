@@ -2,13 +2,13 @@ import {
   Body,
   Controller,
   Get,
-  Headers,
   HttpCode,
   HttpStatus,
   Param,
   Post,
   Query,
   BadRequestException,
+  Req,
 } from '@nestjs/common';
 import {
   ApiBody,
@@ -23,8 +23,9 @@ import { BookPurchaseService } from './book-purchase.service';
 import { CreateBookPurchaseDto } from './dto/create-book-purchase.dto';
 import { PurchaseOperation, PurchaseStatus } from './models/purchase-operation.model';
 import { ReplayProviderEventDto } from './dto/replay-provider-event.dto';
+import { FastifyRequest } from 'fastify';
 
-@ApiTags('book-purchase', 'candidate-task')
+@ApiTags('book-purchase')
 @Controller('book-purchase')
 export class BookPurchaseController {
   constructor(private readonly bookPurchaseService: BookPurchaseService) {}
@@ -84,9 +85,14 @@ export class BookPurchaseController {
     description: 'Rate limit exceeded for customerId (3 creates per 60 seconds)',
   })
   async create(
-    @Headers('idempotency-key') idempotencyKey: string,
+    @Req() request: FastifyRequest,
     @Body() dto: CreateBookPurchaseDto,
   ): Promise<PurchaseOperation> {
+    const rawIdempotencyKey = request.headers['idempotency-key'];
+    const idempotencyKey = Array.isArray(rawIdempotencyKey)
+      ? rawIdempotencyKey[0]
+      : rawIdempotencyKey;
+
     if (!idempotencyKey) {
       throw new BadRequestException('Idempotency-Key header is required.');
     }

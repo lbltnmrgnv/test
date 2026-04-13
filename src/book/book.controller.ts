@@ -12,7 +12,7 @@ export class BookController {
   @Get()
   @ApiOperation({
     summary: 'List books available for purchase',
-    description: 'Start point for candidate: fetch valid `bookId` values for purchase scenarios.',
+    description: 'Use this endpoint to fetch valid `bookId` values for purchase scenarios.',
   })
   @ApiResponse({ status: HttpStatus.OK, type: Book, isArray: true })
   async getAll(@Query() query: GetBooksQueryDto): Promise<Book[]> {
