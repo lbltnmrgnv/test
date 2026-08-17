@@ -63,6 +63,8 @@ function App() {
   const [orders, setOrders] = useState([]);
   const [walletTransactions, setWalletTransactions] = useState([]);
   const [cartItems, setCartItems] = useState([]);
+  const [checkoutStep, setCheckoutStep] = useState('cart');
+  const [accountSection, setAccountSection] = useState('profile');
   const [forms, setForms] = useState(emptyForms);
   const [inventoryDrafts, setInventoryDrafts] = useState({});
   const [message, setMessage] = useState({ text: '', tone: '' });
@@ -446,39 +448,22 @@ function App() {
     }
   }
 
-  async function startPurchase(bookId, quantity, idempotencyKey) {
-    if (!user) {
-      showMessage('Войдите в тестовый аккаунт, чтобы оформить покупку.', 'error');
-      goToPage('auth');
-      return;
-    }
-
-    setBusyAction(`buy-${bookId}`);
-
-    try {
-      const operation = await request(
-        '/book-purchase',
-        {
-          method: 'POST',
-          headers: {
-            'Idempotency-Key': idempotencyKey,
-          },
-          body: JSON.stringify({
-            bookId,
-            quantity: Number(quantity),
-            paymentToken: 'tok_visa_test',
-          }),
+  async function createPurchase(bookId, quantity) {
+    return request(
+      '/book-purchase',
+      {
+        method: 'POST',
+        headers: {
+          'Idempotency-Key': buildIdempotencyKey(bookId),
         },
-        true,
-      );
-
-      setPurchaseStatus(`Operation ${operation.operationId} created. Polling status...`);
-      await pollOrder(operation.operationId);
-    } catch (error) {
-      handleError(error);
-    } finally {
-      setBusyAction('');
-    }
+        body: JSON.stringify({
+          bookId,
+          quantity: Number(quantity),
+          paymentToken: 'tok_visa_test',
+        }),
+      },
+      true,
+    );
   }
 
   async function pollOrder(operationId) {
@@ -518,6 +503,24 @@ function App() {
     showMessage('Book added to cart.', 'success');
   }
 
+  function buyFromBook(bookId, quantity) {
+    setCartItems(current => {
+      const existing = current.find(item => item.bookId === bookId);
+
+      if (existing) {
+        return current.map(item =>
+          item.bookId === bookId
+            ? { ...item, quantity: Math.min(5, item.quantity + quantity) }
+            : item,
+        );
+      }
+
+      return [...current, { bookId, quantity }];
+    });
+    setCheckoutStep('cart');
+    goToPage('cart');
+  }
+
   function updateCartQuantity(bookId, quantity) {
     setCartItems(current =>
       current
@@ -534,7 +537,7 @@ function App() {
     setCartItems(current => current.filter(item => item.bookId !== bookId));
   }
 
-  async function checkoutCart() {
+  function beginCheckout() {
     if (!cartItems.length) {
       showMessage('Cart is empty.', 'error');
       return;
@@ -546,20 +549,37 @@ function App() {
       return;
     }
 
+    if (walletBalance < cartTotal) {
+      setAccountSection('balance');
+      goToPage('account');
+      showMessage('Недостаточно средств. Пополните баланс, чтобы подтвердить заказ.', 'error');
+      return;
+    }
+
+    setCheckoutStep('confirm');
+  }
+
+  async function confirmCheckout() {
+    if (!cartItems.length || !user) {
+      setCheckoutStep('cart');
+      return;
+    }
+
     setBusyAction('checkout');
 
     try {
+      const operations = [];
+
       for (const item of cartItems) {
-        await startPurchase(
-          item.bookId,
-          item.quantity,
-          buildIdempotencyKey(item.bookId),
-        );
+        operations.push(await createPurchase(item.bookId, item.quantity));
       }
 
       setCartItems([]);
+      setCheckoutStep('cart');
+      setAccountSection('orders');
       goToPage('account');
-      showMessage('Cart checkout started.', 'success');
+      setPurchaseStatus('Заказ принят. Проверяем оплату…');
+      await Promise.all(operations.map(operation => pollOrder(operation.operationId)));
     } catch (error) {
       handleError(error);
     } finally {
@@ -640,13 +660,7 @@ function App() {
             busyAction={busyAction}
             user={user}
             onAddToCart={addToCart}
-            onBuyNow={quantity =>
-              startPurchase(
-                selectedBook.id,
-                quantity,
-                buildIdempotencyKey(selectedBook.id),
-              )
-            }
+            onBuyNow={quantity => buyFromBook(selectedBook.id, quantity)}
             onOpenBook={openBook}
           />
         )}
@@ -658,7 +672,11 @@ function App() {
             cartItems={cartItems}
             total={cartTotal}
             user={user}
-            onCheckout={checkoutCart}
+            walletBalance={walletBalance}
+            checkoutStep={checkoutStep}
+            onCheckout={beginCheckout}
+            onCancelCheckout={() => setCheckoutStep('cart')}
+            onConfirmCheckout={confirmCheckout}
             onOpenBook={openBook}
             onRemove={removeFromCart}
             onUpdateQuantity={updateCartQuantity}
@@ -668,6 +686,7 @@ function App() {
         {activePage === 'account' && (
           <AccountPage
             busyAction={busyAction}
+            activeSection={accountSection}
             forms={forms}
             orders={orders}
             purchaseStatus={purchaseStatus}
@@ -677,6 +696,7 @@ function App() {
             walletTransactions={walletTransactions}
             onSetFormValue={setFormValue}
             onTopUp={handleTopUp}
+            onSectionChange={setAccountSection}
           />
         )}
 
@@ -1168,10 +1188,10 @@ function BookPage({ book, busyAction, onAddToCart, onBuyNow, onOpenBook, recomme
           <button
             className="primary-button"
             type="button"
-            disabled={book.stock === 0 || busyAction === `buy-${book.id}`}
+            disabled={book.stock === 0}
             onClick={() => onBuyNow(quantity)}
           >
-            {user ? 'Купить в 1 клик' : 'Войти и купить'}
+            Оформить через корзину
           </button>
           <button className="ghost-text-button" type="button">
             ♡ В избранное
@@ -1201,12 +1221,16 @@ function CartPage({
   books,
   busyAction,
   cartItems,
+  checkoutStep,
+  onCancelCheckout,
+  onConfirmCheckout,
   onCheckout,
   onOpenBook,
   onRemove,
   onUpdateQuantity,
   total,
   user,
+  walletBalance,
 }) {
   const cartBooks = cartItems
     .map(item => ({
@@ -1224,6 +1248,35 @@ function CartPage({
         </div>
       </div>
 
+      {checkoutStep === 'confirm' ? (
+        <div className="checkout-confirmation">
+          <div>
+            <p className="eyebrow">Шаг 2 из 2</p>
+            <h3>Подтвердите заказ</h3>
+            <p className="subtle-text">
+              Оплата спишется с баланса после подтверждения. Заказов: {cartBooks.length}.
+            </p>
+          </div>
+          <div className="checkout-confirmation__summary">
+            <div><span>Сумма заказа</span><strong>{total} ₽</strong></div>
+            <div><span>Баланс</span><strong>{walletBalance} ₽</strong></div>
+            <div><span>После оплаты</span><strong>{walletBalance - total} ₽</strong></div>
+          </div>
+          <div className="checkout-confirmation__actions">
+            <button className="mini-outline-button" type="button" onClick={onCancelCheckout}>
+              Вернуться в корзину
+            </button>
+            <button
+              className="primary-button primary-button--dark"
+              type="button"
+              disabled={busyAction === 'checkout'}
+              onClick={() => void onConfirmCheckout()}
+            >
+              {busyAction === 'checkout' ? 'Оформляем…' : 'Подтвердить и оплатить'}
+            </button>
+          </div>
+        </div>
+      ) : (
       <div className="cart-layout">
         <div className="cart-list">
           {cartBooks.length ? (
@@ -1269,25 +1322,51 @@ function CartPage({
           </button>
         </aside>
       </div>
+      )}
     </section>
   );
 }
 
-function AccountPage({ busyAction, forms, orders, purchaseStatus, spentTotal, user, walletBalance, walletTransactions, onSetFormValue, onTopUp }) {
+function AccountPage({
+  activeSection,
+  busyAction,
+  forms,
+  orders,
+  purchaseStatus,
+  spentTotal,
+  user,
+  walletBalance,
+  walletTransactions,
+  onSectionChange,
+  onSetFormValue,
+  onTopUp,
+}) {
+  const sections = [
+    { id: 'profile', label: 'Профиль' },
+    { id: 'orders', label: 'Заказы' },
+    { id: 'balance', label: 'Баланс' },
+    { id: 'transactions', label: 'История операций' },
+  ];
+
   return (
     <section className="page-card account-page">
       <aside className="account-menu">
-        <button className="account-menu__item active" type="button">Профиль</button>
-        <button className="account-menu__item" type="button">Заказы</button>
-        <button className="account-menu__item" type="button">Избранное</button>
-        <button className="account-menu__item" type="button">Баланс</button>
-        <button className="account-menu__item" type="button">История операций</button>
+        {sections.map(section => (
+          <button
+            className={`account-menu__item ${activeSection === section.id ? 'active' : ''}`}
+            key={section.id}
+            type="button"
+            onClick={() => onSectionChange(section.id)}
+          >
+            {section.label}
+          </button>
+        ))}
       </aside>
 
       <div className="account-content">
         <div className="section-title-row">
           <div>
-            <h2>Профиль</h2>
+            <h2>{sections.find(section => section.id === activeSection)?.label}</h2>
             <p className="subtle-text">Управление пользователем, балансом и заказами</p>
           </div>
         </div>
@@ -1306,75 +1385,13 @@ function AccountPage({ busyAction, forms, orders, purchaseStatus, spentTotal, us
           </div>
         </div>
 
+        {activeSection === 'profile' && (
         <div className="account-grid">
           <section className="account-card">
-            <h3>Пополнить баланс</h3>
-            <form className="topup-form" onSubmit={onTopUp}>
-              <input
-                value={forms.topUp.amountCents}
-                onChange={event => onSetFormValue('topUp', 'amountCents', event.target.value)}
-                type="number"
-                min="1"
-                placeholder="Сумма"
-                required
-              />
-              <input
-                value={forms.topUp.description}
-                onChange={event => onSetFormValue('topUp', 'description', event.target.value)}
-                placeholder="Описание"
-              />
-              <button className="primary-button" type="submit" disabled={!user || busyAction === 'topup'}>
-                Пополнить баланс
-              </button>
-            </form>
+            <h3>Ваш аккаунт</h3>
+            <p className="subtle-text">Пополняйте баланс в одноимённом разделе и оформляйте покупки через корзину.</p>
             {purchaseStatus && <p className="subtle-text">{purchaseStatus}</p>}
           </section>
-
-          <section className="account-card">
-            <h3>Последние заказы</h3>
-            <div className="history-list">
-              {orders.length ? (
-                orders.slice(0, 4).map(order => (
-                  <div className="history-row" key={order.operationId}>
-                    <div>
-                      <strong>{order.book.title}</strong>
-                      <span className="subtle-text">{order.createdAt.slice(0, 10)}</span>
-                    </div>
-                    <div className="history-row__meta">
-                      <span>{order.amountCents} ₽</span>
-                      <span className={order.status === 'PAID' ? 'ok-status' : 'warn-status'}>
-                        {order.status}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="empty-state">Заказов пока нет.</p>
-              )}
-            </div>
-          </section>
-
-          <section className="account-card">
-            <h3>История операций</h3>
-            <div className="history-list">
-              {walletTransactions.length ? (
-                walletTransactions.slice(0, 5).map(transaction => (
-                  <div className="history-row" key={transaction.id}>
-                    <div>
-                      <strong>{transaction.description}</strong>
-                      <span className="subtle-text">{transaction.createdAt.slice(0, 10)}</span>
-                    </div>
-                    <div className="history-row__meta">
-                      <span>{transaction.amountCents > 0 ? '+' : ''}{transaction.amountCents} ₽</span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="empty-state">Операций пока нет.</p>
-              )}
-            </div>
-          </section>
-
           <section className="account-card account-card--stats">
             <h3>Статистика</h3>
             <div className="stats-row">
@@ -1391,6 +1408,54 @@ function AccountPage({ busyAction, forms, orders, purchaseStatus, spentTotal, us
             </div>
           </section>
         </div>
+        )}
+
+        {activeSection === 'balance' && (
+          <section className="account-card account-card--wide">
+            <h3>Пополнить баланс</h3>
+            <p className="subtle-text">Деньги на балансе используются для оплаты заказов в корзине.</p>
+            <form className="topup-form" onSubmit={onTopUp}>
+              <input value={forms.topUp.amountCents} onChange={event => onSetFormValue('topUp', 'amountCents', event.target.value)} type="number" min="1" placeholder="Сумма, ₽" required />
+              <input value={forms.topUp.description} onChange={event => onSetFormValue('topUp', 'description', event.target.value)} placeholder="Комментарий" />
+              <button className="primary-button" type="submit" disabled={!user || busyAction === 'topup'}>Пополнить баланс</button>
+            </form>
+          </section>
+        )}
+
+        {activeSection === 'orders' && <OrderHistory orders={orders} />}
+        {activeSection === 'transactions' && <WalletHistory transactions={walletTransactions} />}
+      </div>
+    </section>
+  );
+}
+
+function OrderHistory({ orders }) {
+  return (
+    <section className="account-card account-card--wide">
+      <h3>Ваши заказы</h3>
+      <div className="history-list">
+        {orders.length ? orders.map(order => (
+          <div className="history-row" key={order.operationId}>
+            <div><strong>{order.book.title}</strong><span className="subtle-text">{order.createdAt.slice(0, 10)}</span></div>
+            <div className="history-row__meta"><span>{order.amountCents} ₽</span><span className={order.status === 'PAID' ? 'ok-status' : 'warn-status'}>{order.status}</span></div>
+          </div>
+        )) : <p className="empty-state">Заказов пока нет.</p>}
+      </div>
+    </section>
+  );
+}
+
+function WalletHistory({ transactions }) {
+  return (
+    <section className="account-card account-card--wide">
+      <h3>История операций</h3>
+      <div className="history-list">
+        {transactions.length ? transactions.map(transaction => (
+          <div className="history-row" key={transaction.id}>
+            <div><strong>{transaction.description}</strong><span className="subtle-text">{transaction.createdAt.slice(0, 10)}</span></div>
+            <div className="history-row__meta"><span>{transaction.amountCents > 0 ? '+' : ''}{transaction.amountCents} ₽</span></div>
+          </div>
+        )) : <p className="empty-state">Операций пока нет.</p>}
       </div>
     </section>
   );

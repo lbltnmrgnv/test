@@ -31,5 +31,82 @@
     "active": true,
     "isNew": true,
     "isOnSale": false
+  },
+  {
+    "id": "book-dune",
+    "title": "Дюна",
+    "author": "Фрэнк Герберт",
+    "categorySlug": "fantasy",
+    "priceCents": 1890,
+    "stock": 12,
+    "active": true,
+    "isNew": true,
+    "isOnSale": false
+  },
+  {
+    "id": "book-sherlock",
+    "title": "Собака Баскервилей",
+    "author": "Артур Конан Дойл",
+    "categorySlug": "detective",
+    "priceCents": 990,
+    "stock": 7,
+    "active": true,
+    "isNew": false,
+    "isOnSale": true
+  },
+  {
+    "id": "book-sapiens",
+    "title": "Sapiens. Краткая история человечества",
+    "author": "Юваль Ной Харари",
+    "categorySlug": "history",
+    "priceCents": 2490,
+    "stock": 6,
+    "active": true,
+    "isNew": false,
+    "isOnSale": false
+  },
+  {
+    "id": "book-pride-prejudice",
+    "title": "Гордость и предубеждение",
+    "author": "Джейн Остин",
+    "categorySlug": "romance",
+    "priceCents": 1190,
+    "stock": 9,
+    "active": true,
+    "isNew": true,
+    "isOnSale": true
+  },
+  {
+    "id": "book-wright-brothers",
+    "title": "Братья Райт",
+    "author": "Дэвид Маккалоу",
+    "categorySlug": "biography",
+    "priceCents": 2290,
+    "stock": 4,
+    "active": true,
+    "isNew": false,
+    "isOnSale": false
+  },
+  {
+    "id": "book-cosmos",
+    "title": "Космос",
+    "author": "Карл Саган",
+    "categorySlug": "science",
+    "priceCents": 1790,
+    "stock": 10,
+    "active": true,
+    "isNew": true,
+    "isOnSale": false
+  },
+  {
+    "id": "book-master-margarita",
+    "title": "Мастер и Маргарита",
+    "author": "Михаил Булгаков",
+    "categorySlug": "fiction",
+    "priceCents": 1390,
+    "stock": 0,
+    "active": true,
+    "isNew": false,
+    "isOnSale": true
   }
 ]

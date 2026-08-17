@@ -778,6 +778,51 @@ select {
   font-weight: 700;
 }
 
+.checkout-confirmation {
+  display: grid;
+  gap: 22px;
+  max-width: 720px;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface-soft);
+}
+
+.checkout-confirmation h3,
+.checkout-confirmation p {
+  margin: 0;
+}
+
+.eyebrow {
+  margin-bottom: 8px !important;
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.checkout-confirmation__summary {
+  display: grid;
+  gap: 10px;
+}
+
+.checkout-confirmation__summary div {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.checkout-confirmation__summary div:last-child {
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.checkout-confirmation__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 .account-page {
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
@@ -855,6 +900,11 @@ select {
   border-radius: 18px;
   border: 1px solid var(--line);
   background: var(--surface-soft);
+}
+
+.account-card--wide {
+  display: grid;
+  gap: 16px;
 }
 
 .account-card h3 {
