@@ -12,15 +12,6 @@ export class CreateBookPurchaseDto {
   @Transform(({ value }) => value?.trim())
   readonly bookId: string;
 
-  @IsString()
-  @IsNotEmpty()
-  @ApiProperty({
-    example: 'test-user-1',
-    description: 'Customer identifier used for rate limiting (3 requests per 60 seconds)',
-  })
-  @Transform(({ value }) => value?.trim())
-  readonly customerId: string;
-
   @IsInt()
   @Min(1)
   @Max(5)
@@ -38,7 +29,7 @@ export class CreateBookPurchaseDto {
   @ApiProperty({
     example: 'tok_visa_test',
     description:
-      'Mock payment token. Contains "fail" -> FAILED, contains "flaky" -> first attempt FAILED then retry, contains "slow" -> delayed processing',
+      'Mock payment token. Contains "fail" -> final status FAILED with wallet refund; contains "flaky" -> first attempt failed then retry; contains "slow" -> delayed processing',
   })
   @Transform(({ value }) => value?.trim())
   readonly paymentToken: string;

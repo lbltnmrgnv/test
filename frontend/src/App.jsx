@@ -2,10 +2,35 @@ import { useEffect, useMemo, useState } from 'react';
 
 const ACCESS_TOKEN_KEY = 'book_store_access_token';
 const REFRESH_TOKEN_KEY = 'book_store_refresh_token';
+const DEMO_ACCOUNT = {
+  email: 'demo@bookish.test',
+  password: 'bookish123',
+};
+
+const catalogCategories = [
+  { value: 'all', label: 'Все книги' },
+  { value: 'fiction', label: 'Художественная литература' },
+  { value: 'science', label: 'Научпоп' },
+  { value: 'detective', label: 'Детективы' },
+  { value: 'fantasy', label: 'Фантастика' },
+  { value: 'romance', label: 'Романтика' },
+  { value: 'business', label: 'Бизнес и саморазвитие' },
+  { value: 'history', label: 'История' },
+  { value: 'biography', label: 'Биографии' },
+  { value: 'programming', label: 'Программирование' },
+];
+
+const catalogSectionTitles = {
+  catalog: 'Все книги',
+  genres: 'Жанры',
+  authors: 'Авторы',
+  new: 'Новинки',
+  sale: 'Акции',
+};
 
 const emptyForms = {
   register: { name: '', email: '', password: '' },
-  login: { email: '', password: '' },
+  login: DEMO_ACCOUNT,
   topUp: { amountCents: '5000', description: 'Wallet top up' },
   createBook: {
     id: '',
@@ -16,18 +41,6 @@ const emptyForms = {
     stock: '5',
   },
 };
-
-const demoCategories = [
-  'Все книги',
-  'Художественная литература',
-  'Научпоп',
-  'Детективы',
-  'Фантастика',
-  'Романтика',
-  'Бизнес и саморазвитие',
-  'История',
-  'Биографии',
-];
 
 function App() {
   const [accessToken, setAccessToken] = useState(
@@ -41,6 +54,9 @@ function App() {
   const [search, setSearch] = useState('');
   const [stockFilter, setStockFilter] = useState('all');
   const [sortBy, setSortBy] = useState('popular');
+  const [catalogSection, setCatalogSection] = useState('catalog');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [authorFilter, setAuthorFilter] = useState('all');
   const [user, setUser] = useState(null);
   const [walletBalance, setWalletBalance] = useState(0);
   const [books, setBooks] = useState([]);
@@ -83,7 +99,23 @@ function App() {
         (stockFilter === 'in-stock' && book.stock > 0) ||
         (stockFilter === 'out-of-stock' && book.stock === 0);
 
-      return matchesSearch && matchesStock;
+      const matchesCategory =
+        categoryFilter === 'all' || book.categorySlug === categoryFilter;
+      const matchesAuthor =
+        catalogSection !== 'authors' ||
+        authorFilter === 'all' ||
+        book.author === authorFilter;
+      const matchesSection =
+        (catalogSection !== 'new' || book.isNew) &&
+        (catalogSection !== 'sale' || book.isOnSale);
+
+      return (
+        matchesSearch &&
+        matchesStock &&
+        matchesCategory &&
+        matchesAuthor &&
+        matchesSection
+      );
     });
 
     if (sortBy === 'price-asc') {
@@ -99,7 +131,12 @@ function App() {
     }
 
     return prepared;
-  }, [books, search, sortBy, stockFilter]);
+  }, [authorFilter, books, catalogSection, categoryFilter, search, sortBy, stockFilter]);
+
+  const catalogAuthors = useMemo(
+    () => [...new Set(books.map(book => book.author))].sort(),
+    [books],
+  );
 
   const recentBooks = filteredBooks.slice(0, 6);
   const recommendedBooks = filteredBooks
@@ -262,6 +299,17 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  function goToCatalog(section) {
+    setCatalogSection(section);
+    if (section !== 'genres') {
+      setCategoryFilter('all');
+    }
+    if (section !== 'authors') {
+      setAuthorFilter('all');
+    }
+    goToPage('catalog');
+  }
+
   async function handleRegister(event) {
     event.preventDefault();
     setBusyAction('register');
@@ -342,7 +390,7 @@ function App() {
       );
 
       setWalletBalance(wallet.balanceCents);
-      showMessage(`Wallet topped up to ${wallet.balanceCents} cents.`, 'success');
+      showMessage(`Баланс пополнен: ${wallet.balanceCents} ₽.`, 'success');
       await refreshSessionData();
     } catch (error) {
       handleError(error);
@@ -399,6 +447,12 @@ function App() {
   }
 
   async function startPurchase(bookId, quantity, idempotencyKey) {
+    if (!user) {
+      showMessage('Войдите в тестовый аккаунт, чтобы оформить покупку.', 'error');
+      goToPage('auth');
+      return;
+    }
+
     setBusyAction(`buy-${bookId}`);
 
     try {
@@ -412,6 +466,7 @@ function App() {
           body: JSON.stringify({
             bookId,
             quantity: Number(quantity),
+            paymentToken: 'tok_visa_test',
           }),
         },
         true,
@@ -485,6 +540,12 @@ function App() {
       return;
     }
 
+    if (!user) {
+      showMessage('Войдите в тестовый аккаунт, чтобы оформить заказ.', 'error');
+      goToPage('auth');
+      return;
+    }
+
     setBusyAction('checkout');
 
     try {
@@ -518,6 +579,8 @@ function App() {
           activePage={activePage}
           cartCount={cartItems.length}
           onNavigate={goToPage}
+          onNavigateCatalog={goToCatalog}
+          catalogSection={catalogSection}
           onSearchChange={setSearch}
           search={search}
           user={user}
@@ -527,7 +590,7 @@ function App() {
           <HomePage
             recentBooks={recentBooks}
             onOpenBook={openBook}
-            onNavigate={goToPage}
+            onNavigateCatalog={goToCatalog}
             onAddToCart={addToCart}
           />
         )}
@@ -550,7 +613,11 @@ function App() {
             search={search}
             stockFilter={stockFilter}
             sortBy={sortBy}
-            categories={demoCategories}
+            categories={catalogCategories}
+            authors={catalogAuthors}
+            catalogSection={catalogSection}
+            categoryFilter={categoryFilter}
+            authorFilter={authorFilter}
             user={user}
             forms={forms}
             onAddToCart={addToCart}
@@ -560,6 +627,8 @@ function App() {
             onSetInventoryValue={setInventoryValue}
             onSetSortBy={setSortBy}
             onSetStockFilter={setStockFilter}
+            onSetCategoryFilter={setCategoryFilter}
+            onSetAuthorFilter={setAuthorFilter}
             onUpdateInventory={updateInventory}
           />
         )}
@@ -588,6 +657,7 @@ function App() {
             busyAction={busyAction}
             cartItems={cartItems}
             total={cartTotal}
+            user={user}
             onCheckout={checkoutCart}
             onOpenBook={openBook}
             onRemove={removeFromCart}
@@ -618,13 +688,22 @@ function App() {
   );
 }
 
-function Header({ activePage, cartCount, onNavigate, onSearchChange, search, user }) {
+function Header({
+  activePage,
+  cartCount,
+  catalogSection,
+  onNavigate,
+  onNavigateCatalog,
+  onSearchChange,
+  search,
+  user,
+}) {
   const navItems = [
-    { id: 'home', label: 'Каталог' },
-    { id: 'catalog', label: 'Жанры' },
-    { id: 'catalog', label: 'Авторы' },
-    { id: 'catalog', label: 'Новинки' },
-    { id: 'catalog', label: 'Акции' },
+    { id: 'catalog', label: 'Каталог' },
+    { id: 'genres', label: 'Жанры' },
+    { id: 'authors', label: 'Авторы' },
+    { id: 'new', label: 'Новинки' },
+    { id: 'sale', label: 'Акции' },
   ];
 
   return (
@@ -638,9 +717,9 @@ function Header({ activePage, cartCount, onNavigate, onSearchChange, search, use
         {navItems.map(item => (
           <button
             key={`${item.id}-${item.label}`}
-            className={`nav-link ${activePage === item.id ? 'active' : ''}`}
+            className={`nav-link ${activePage === 'catalog' && catalogSection === item.id ? 'active' : ''}`}
             type="button"
-            onClick={() => onNavigate(item.id)}
+            onClick={() => onNavigateCatalog(item.id)}
           >
             {item.label}
           </button>
@@ -672,7 +751,7 @@ function Header({ activePage, cartCount, onNavigate, onSearchChange, search, use
   );
 }
 
-function HomePage({ recentBooks, onAddToCart, onNavigate, onOpenBook }) {
+function HomePage({ recentBooks, onAddToCart, onNavigateCatalog, onOpenBook }) {
   return (
     <section className="page-card">
       <div className="hero-block">
@@ -682,7 +761,7 @@ function HomePage({ recentBooks, onAddToCart, onNavigate, onOpenBook }) {
             Откройте новые истории, знания и вдохновение. Тысячи книг в одном
             месте, а оплата и заказы уже встроены в кабинет.
           </p>
-          <button className="primary-button" type="button" onClick={() => onNavigate('catalog')}>
+          <button className="primary-button" type="button" onClick={() => onNavigateCatalog('catalog')}>
             Смотреть каталог
           </button>
         </div>
@@ -715,7 +794,7 @@ function HomePage({ recentBooks, onAddToCart, onNavigate, onOpenBook }) {
       <section className="shelf-section">
         <div className="section-title-row">
           <h2>Новинки</h2>
-          <button className="text-link" type="button" onClick={() => onNavigate('catalog')}>
+          <button className="text-link" type="button" onClick={() => onNavigateCatalog('new')}>
             Смотреть все
           </button>
         </div>
@@ -746,7 +825,7 @@ function AuthPage({ busyAction, forms, onLogin, onRegister, onSetFormValue }) {
         <div className="auth-grid">
           <form className="auth-card" onSubmit={onLogin}>
             <h2>Добро пожаловать!</h2>
-            <p>Войдите в свой аккаунт</p>
+            <p>Тестовый доступ уже заполнен: demo@bookish.test / bookish123</p>
             <label>
               Email
               <input
@@ -827,8 +906,12 @@ function AuthPage({ busyAction, forms, onLogin, onRegister, onSetFormValue }) {
 }
 
 function CatalogPage({
+  authorFilter,
+  authors,
   books,
   busyAction,
+  catalogSection,
+  categoryFilter,
   categories,
   forms,
   inventoryDrafts,
@@ -836,6 +919,8 @@ function CatalogPage({
   onCreateBook,
   onOpenBook,
   onSetFormValue,
+  onSetAuthorFilter,
+  onSetCategoryFilter,
   onSetInventoryValue,
   onSetSortBy,
   onSetStockFilter,
@@ -844,16 +929,30 @@ function CatalogPage({
   stockFilter,
   user,
 }) {
+  const isAuthorSection = catalogSection === 'authors';
+  const sidebarItems = isAuthorSection
+    ? [{ value: 'all', label: 'Все авторы' }, ...authors.map(author => ({ value: author, label: author }))]
+    : categories;
+  const selectedFilter = isAuthorSection ? authorFilter : categoryFilter;
+
   return (
     <section className="page-card catalog-page">
       <aside className="catalog-sidebar">
         <div className="sidebar-block">
-          <h3>Каталог</h3>
+          <h3>{isAuthorSection ? 'Авторы' : 'Каталог'}</h3>
           <ul className="sidebar-list">
-            {categories.map(category => (
-              <li key={category}>
-                <button className="sidebar-link" type="button">
-                  {category}
+            {sidebarItems.map(item => (
+              <li key={item.value}>
+                <button
+                  className={`sidebar-link ${selectedFilter === item.value ? 'active' : ''}`}
+                  type="button"
+                  onClick={() =>
+                    isAuthorSection
+                      ? onSetAuthorFilter(item.value)
+                      : onSetCategoryFilter(item.value)
+                  }
+                >
+                  {item.label}
                 </button>
               </li>
             ))}
@@ -888,7 +987,7 @@ function CatalogPage({
       <div className="catalog-content">
         <div className="section-title-row">
           <div>
-            <h2>Все книги</h2>
+            <h2>{catalogSectionTitles[catalogSection]}</h2>
             <p className="subtle-text">Найдено {books.length} книг</p>
           </div>
         </div>
@@ -1069,10 +1168,10 @@ function BookPage({ book, busyAction, onAddToCart, onBuyNow, onOpenBook, recomme
           <button
             className="primary-button"
             type="button"
-            disabled={!user || busyAction === `buy-${book.id}`}
+            disabled={book.stock === 0 || busyAction === `buy-${book.id}`}
             onClick={() => onBuyNow(quantity)}
           >
-            Купить в 1 клик
+            {user ? 'Купить в 1 клик' : 'Войти и купить'}
           </button>
           <button className="ghost-text-button" type="button">
             ♡ В избранное
@@ -1098,7 +1197,17 @@ function BookPage({ book, busyAction, onAddToCart, onBuyNow, onOpenBook, recomme
   );
 }
 
-function CartPage({ books, busyAction, cartItems, onCheckout, onOpenBook, onRemove, onUpdateQuantity, total }) {
+function CartPage({
+  books,
+  busyAction,
+  cartItems,
+  onCheckout,
+  onOpenBook,
+  onRemove,
+  onUpdateQuantity,
+  total,
+  user,
+}) {
   const cartBooks = cartItems
     .map(item => ({
       ...item,
@@ -1156,7 +1265,7 @@ function CartPage({ books, busyAction, cartItems, onCheckout, onOpenBook, onRemo
             disabled={!cartBooks.length || busyAction === 'checkout'}
             onClick={() => void onCheckout()}
           >
-            Оформить заказ
+            {user ? 'Оформить заказ' : 'Войти для покупки'}
           </button>
         </aside>
       </div>

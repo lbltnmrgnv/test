@@ -9,6 +9,7 @@ import {
   Query,
   BadRequestException,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBody,
@@ -18,12 +19,13 @@ import {
   ApiQuery,
   ApiResponse,
   ApiTags,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { BookPurchaseService } from './book-purchase.service';
 import { CreateBookPurchaseDto } from './dto/create-book-purchase.dto';
 import { PurchaseOperation, PurchaseStatus } from './models/purchase-operation.model';
 import { ReplayProviderEventDto } from './dto/replay-provider-event.dto';
-import { FastifyRequest } from 'fastify';
+import { AuthGuard, AuthenticatedRequest } from '../auth/auth.guard';
 
 @ApiTags('book-purchase')
 @Controller('book-purchase')
@@ -32,6 +34,8 @@ export class BookPurchaseController {
 
   @Post()
   @HttpCode(HttpStatus.ACCEPTED)
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Create a book purchase operation',
     description:
@@ -59,7 +63,6 @@ export class BookPurchaseController {
         summary: 'Standard successful flow',
         value: {
           bookId: 'book-atomic-habits',
-          customerId: 'user-1',
           quantity: 1,
           paymentToken: 'tok_visa_test',
         },
@@ -68,7 +71,6 @@ export class BookPurchaseController {
         summary: 'Declined payment',
         value: {
           bookId: 'book-atomic-habits',
-          customerId: 'user-2',
           quantity: 1,
           paymentToken: 'tok_fail_card',
         },
@@ -77,7 +79,6 @@ export class BookPurchaseController {
         summary: 'Flaky first attempt then retry',
         value: {
           bookId: 'book-ddd',
-          customerId: 'user-3',
           quantity: 1,
           paymentToken: 'tok_flaky_gateway',
         },
@@ -91,10 +92,10 @@ export class BookPurchaseController {
   })
   @ApiResponse({
     status: HttpStatus.TOO_MANY_REQUESTS,
-    description: 'Rate limit exceeded for customerId (3 creates per 60 seconds)',
+    description: 'Rate limit exceeded for the current user (3 creates per 60 seconds)',
   })
   async create(
-    @Req() request: FastifyRequest,
+    @Req() request: AuthenticatedRequest,
     @Body() dto: CreateBookPurchaseDto,
   ): Promise<PurchaseOperation> {
     const rawIdempotencyKey = request.headers['idempotency-key'];
@@ -106,7 +107,11 @@ export class BookPurchaseController {
       throw new BadRequestException('Idempotency-Key header is required.');
     }
 
-    return this.bookPurchaseService.createOperation(idempotencyKey, dto);
+    return this.bookPurchaseService.createOperation(
+      idempotencyKey,
+      request.user.id,
+      dto,
+    );
   }
 
   @Get('operations')

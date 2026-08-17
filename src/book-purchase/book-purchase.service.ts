@@ -10,6 +10,7 @@ import { promises as fs } from 'node:fs';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { BookService } from '../book/book.service';
+import { WalletService } from '../wallet/wallet.service';
 import { CreateBookPurchaseDto } from './dto/create-book-purchase.dto';
 import { PurchaseOperation, PurchaseStatus } from './models/purchase-operation.model';
 
@@ -31,21 +32,30 @@ export class BookPurchaseService {
   private static readonly createRateLimit = 3;
   private static readonly createRateLimitWindowMs = 60 * 1000;
 
-  constructor(private readonly bookService: BookService) {}
+  constructor(
+    private readonly bookService: BookService,
+    private readonly walletService: WalletService,
+  ) {}
 
   async createOperation(
     idempotencyKey: string,
+    customerId: string,
     dto: CreateBookPurchaseDto,
   ): Promise<PurchaseOperation> {
     const operations = await this.readOperations();
-    this.ensureCreateRateLimit(dto.customerId, operations);
+    this.ensureCreateRateLimit(customerId, operations);
 
     const existingOperation = operations.find(
       operation => operation.idempotencyKey === idempotencyKey,
     );
 
     if (existingOperation) {
-      this.ensureIdempotencyPayload(existingOperation, dto, idempotencyKey);
+      this.ensureIdempotencyPayload(
+        existingOperation,
+        dto,
+        customerId,
+        idempotencyKey,
+      );
       return existingOperation;
     }
 
@@ -63,12 +73,18 @@ export class BookPurchaseService {
       status: PurchaseStatus.PENDING,
       bookId: dto.bookId,
       quantity: dto.quantity,
-      customerId: dto.customerId,
+      customerId,
       amountCents: dto.quantity * book.priceCents,
       idempotencyKey,
       paymentAttempts: 0,
       createdAt: new Date().toISOString(),
     };
+
+    await this.walletService.reserveForPurchase(
+      customerId,
+      operation.amountCents,
+      operation.operationId,
+    );
 
     operations.push(operation);
     await this.writeOperations(operations);
@@ -174,11 +190,21 @@ export class BookPurchaseService {
       operations[operationIndex] = operation;
       await this.writeOperations(operations);
 
-      if (
+      const shouldRetry =
         paymentToken.toLowerCase().includes('flaky') &&
-        paymentResult.status === PurchaseStatus.FAILED
-      ) {
+        paymentResult.status === PurchaseStatus.FAILED;
+
+      if (shouldRetry) {
         this.processOperationAsync(operationId, paymentToken.replace(/flaky/gi, 'fixed'));
+        return;
+      }
+
+      if (paymentResult.status === PurchaseStatus.FAILED) {
+        await this.walletService.refundPurchase(
+          operation.customerId,
+          operation.amountCents,
+          operation.operationId,
+        );
       }
     }, delayMs);
 
@@ -210,11 +236,12 @@ export class BookPurchaseService {
   private ensureIdempotencyPayload(
     operation: PurchaseOperation,
     dto: CreateBookPurchaseDto,
+    customerId: string,
     idempotencyKey: string,
   ): void {
     if (
       operation.bookId !== dto.bookId ||
-      operation.customerId !== dto.customerId ||
+      operation.customerId !== customerId ||
       operation.quantity !== dto.quantity
     ) {
       throw new ConflictException(

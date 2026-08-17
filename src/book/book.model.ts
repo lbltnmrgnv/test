@@ -21,4 +21,10 @@ export class Book {
 
   @ApiProperty({ example: true })
   active: boolean;
+
+  @ApiProperty({ example: true, required: false })
+  isNew?: boolean;
+
+  @ApiProperty({ example: false, required: false })
+  isOnSale?: boolean;
 }

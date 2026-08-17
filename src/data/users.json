@@ -1,5 +1,13 @@
 [
   {
+    "id": "demo-bookish-user",
+    "email": "demo@bookish.test",
+    "name": "Тестовый пользователь",
+    "passwordHash": "demosalt2026book:a2c4aa26b115f4456a9b09457d74e74e697993f69dd8dd917f63b3cc3e905428b831c800fbf3f8ebe0ba1b65afdb96e0f185cdba8894ee2e60a678524b449e73",
+    "walletBalanceCents": 10000,
+    "createdAt": "2026-08-17T00:00:00.000Z"
+  },
+  {
     "id": "320c23d4-8a1b-488e-acb4-f46b254ed5c2",
     "email": "limit@example.com",
     "name": "Alice",

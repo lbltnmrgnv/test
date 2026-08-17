@@ -530,6 +530,12 @@ select {
   text-align: left;
 }
 
+.sidebar-link.active,
+.sidebar-link:hover {
+  color: var(--green);
+  font-weight: 700;
+}
+
 .catalog-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
