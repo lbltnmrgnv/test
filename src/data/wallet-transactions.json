@@ -1,0 +1,38 @@
+[
+  {
+    "id": "30634393-a430-46cf-bfea-e030debb5bad",
+    "userId": "320c23d4-8a1b-488e-acb4-f46b254ed5c2",
+    "type": "TOP_UP",
+    "amountCents": 10000,
+    "balanceAfterCents": 10000,
+    "description": "Wallet top up",
+    "createdAt": "2026-05-06T06:55:13.826Z"
+  },
+  {
+    "id": "e5201478-de70-4ad2-9bf8-e8480b696913",
+    "userId": "320c23d4-8a1b-488e-acb4-f46b254ed5c2",
+    "type": "PURCHASE_RESERVE",
+    "amountCents": 1490,
+    "balanceAfterCents": 8510,
+    "description": "Reserved for purchase ca602817-e3dd-41c7-8e59-921d9a184a9a",
+    "createdAt": "2026-05-06T06:55:13.827Z"
+  },
+  {
+    "id": "ece919d2-e5ab-49c2-bb4a-368d97a91449",
+    "userId": "320c23d4-8a1b-488e-acb4-f46b254ed5c2",
+    "type": "PURCHASE_RESERVE",
+    "amountCents": 1490,
+    "balanceAfterCents": 7020,
+    "description": "Reserved for purchase 7888b081-0502-4ae9-8530-b10cc3138f49",
+    "createdAt": "2026-05-06T06:55:13.828Z"
+  },
+  {
+    "id": "8e134c73-67ab-4465-a22e-b84e6e6cdb4d",
+    "userId": "320c23d4-8a1b-488e-acb4-f46b254ed5c2",
+    "type": "PURCHASE_RESERVE",
+    "amountCents": 1490,
+    "balanceAfterCents": 5530,
+    "description": "Reserved for purchase 387bba9d-419a-4e5c-842e-8de3005a1102",
+    "createdAt": "2026-05-06T06:55:13.829Z"
+  }
+]

@@ -1,0 +1,10 @@
+[
+  {
+    "id": "320c23d4-8a1b-488e-acb4-f46b254ed5c2",
+    "email": "limit@example.com",
+    "name": "Alice",
+    "passwordHash": "8d36db62ed4c16c5138851ea5ad2d563:24218ed0a20c6f6643ae4a12779c4c3dfcef853ea52131c516912223ee7f5d4e508b0b202dbcca8463e642ebf283fd20cf6d51f619d7c07bb56e347261deb1e2",
+    "walletBalanceCents": 5530,
+    "createdAt": "2026-05-06T06:55:13.825Z"
+  }
+]
