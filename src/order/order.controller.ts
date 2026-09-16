@@ -17,7 +17,7 @@ import { Order } from './models/order.model';
 import { OrderService } from './order.service';
 
 @ApiTags('orders')
-@ApiBearerAuth()
+@ApiBearerAuth('access-token')
 @UseGuards(AuthGuard)
 @Controller('orders')
 export class OrderController {

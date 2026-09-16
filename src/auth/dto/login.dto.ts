@@ -4,12 +4,12 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class LoginDto {
   @IsEmail()
-  @ApiProperty({ example: 'alice@example.com' })
+  @ApiProperty({ example: 'demo@bookish.test' })
   @Transform(({ value }) => value?.trim())
   readonly email: string;
 
   @IsString()
   @MinLength(6)
-  @ApiProperty({ example: 'secret123', minLength: 6 })
+  @ApiProperty({ example: 'bookish123', minLength: 6 })
   readonly password: string;
 }

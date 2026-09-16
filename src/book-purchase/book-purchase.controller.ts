@@ -35,7 +35,7 @@ export class BookPurchaseController {
   @Post()
   @HttpCode(HttpStatus.ACCEPTED)
   @UseGuards(AuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @ApiOperation({
     summary: 'Create a book purchase operation',
     description:

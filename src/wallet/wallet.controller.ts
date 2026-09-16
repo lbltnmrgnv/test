@@ -20,7 +20,7 @@ import { WalletBalance } from './models/wallet-balance.model';
 import { WalletTransaction } from './models/wallet-transaction.model';
 
 @ApiTags('wallet')
-@ApiBearerAuth()
+@ApiBearerAuth('access-token')
 @UseGuards(AuthGuard)
 @Controller('wallet')
 export class WalletController {
